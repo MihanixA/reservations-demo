@@ -69,10 +69,11 @@ function handleCallConnected(e) {
               base_url += '?dt=' + result.parameters['date'].toString();
               base_url += '&phone=' + caller_id;
               if (result.intent['displayName'] === 'restaurants.reservations.cancel') {
+                base_url += '&action=cancel';
+
+              } else {
                 base_url += '&action=create';
                 base_url += '&cnt=' + result.parameters['number'].toString();
-              } else {
-                base_url += '&action=cancel';
               }
               Net.httpRequest(base_url,
                 (result) => {
@@ -91,7 +92,7 @@ function handleCallConnected(e) {
                     Logger.write("data: " + result.data);
                     Logger.write("text: " + result.text);
                     Logger.write("result: " + result.result);
-                    msg += " Your reservation id is " + JSON.parse(result.text)['result'] + " Thank you ";
+                    msg += " Your reservation has been saved. Thank you ";
 
                   }
                   Logger.write('msg' + msg)

@@ -13,7 +13,7 @@ CREATE TABLE reservations
     table_id Uint64,
     cnt Uint64,
     dt DateTime,
-    PRIMARY KEY (dt, phone),
+    PRIMARY KEY (dt, phone)
 );
 
 COMMIT;

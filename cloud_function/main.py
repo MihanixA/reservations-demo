@@ -29,11 +29,11 @@ def handler(event, _):
             params = event['queryStringParameters']
             action = params.pop('action')
             if action == 'create':
-                request = ReservationCreateRequest(**json.loads(params))
+                request = ReservationCreateRequest(**params)
                 response: ReservationCreateResponse = controller.maybe_create_reservation(request)
                 data = json.dumps(response.dict())
             elif action == 'cancel':
-                request = ReservationCancelRequest(**json.loads(params))
+                request = ReservationCancelRequest(**params)
                 response: ReservationCancelResponse = controller.maybe_cancel_reservation(request)
                 data = json.dumps(response.dict())
         except Exception as e:
@@ -54,4 +54,3 @@ def handler(event, _):
             'error': error
         })
     }
-
