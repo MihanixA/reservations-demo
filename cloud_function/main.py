@@ -23,7 +23,7 @@ def handler(event, _):
     error = ''
     data = ''
 
-    if event['httpMethod'] == 'POST':
+    if event['httpMethod'] == 'GET':
         logging.info('Got ReservationCreateRequest')
         try:
             params = event['queryStringParameters']
