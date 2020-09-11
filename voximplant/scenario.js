@@ -35,6 +35,7 @@ function startASR() {
 // state machine instead of nested if statements
 function handleCallConnected(e) {
 
+
   flow = AI.createDialogflow({
     lang: "en"
   });
@@ -57,17 +58,25 @@ function handleCallConnected(e) {
             player.addEventListener(PlayerEvents.PlaybackMarkerReached, startASR)
             player.sendMediaTo(mycall)
           } catch (err) {
-            Logger.write('# state 5');
+
           }
 
           Logger.write(result.allRequiredParamsPresent);
 
           if (result.allRequiredParamsPresent == true) {
-            Logger.write('# state 7')
               let msg = "";
-              Net.httpRequest('https://functions.yandexcloud.net/d4erurocvcpt8dc20mfb',
+              let base_url = 'https://functions.yandexcloud.net/d4erurocvcpt8dc20mfb';
+              base_url += '?dt=' + result.parameters['date'].toString();
+              base_url += '&phone=' + caller_id;
+              if (result.intent['displayName'] === 'restaurants.reservations.cancel') {
+                base_url += '&action=create';
+                base_url += '&cnt=' + result.parameters['number'].toString();
+              } else {
+                base_url += '&action=cancel';
+              }
+              Net.httpRequest(base_url,
                 (result) => {
-                  msg += " Понятно. "
+                  msg += " OK "
                   if (result.code != 200) {
                     Logger.write("Failed");
                     Logger.write("code:  " + result.code);
@@ -92,11 +101,7 @@ function handleCallConnected(e) {
                   player.sendMediaTo(e.call)
                 },
                 Net.HttpRequestOptions({
-                    method: 'POST',
-                    postData: JSON.stringify({
-                        'dt': result.parameters['date'],
-                        'cnt': result.parameters['number'],
-                    })
+                    method: 'GET',
                   }
                 )
               )
@@ -131,4 +136,3 @@ function handleCallConnected(e) {
     VoxEngine.terminate();
   })
 }
-

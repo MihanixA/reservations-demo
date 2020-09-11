@@ -1,7 +1,7 @@
 import datetime
 import typing
 from kikimr.public.sdk.python import client as ydb
-from utils import session_pool_context, make_driver_config, gen_reservation_id
+from utils import session_pool_context, make_driver_config
 from config import Config
 
 
@@ -66,19 +66,18 @@ class Storage(object):
 
     def save_reservation(self, *,
                          dt: datetime.datetime, table_id: int,
-                         cnt: int, description: str = '') -> int:
+                         cnt: int, description: str = '',
+                         phone: str) -> None:
         query = f"""PRAGMA TablePathPrefix("{self._database}");
         DECLARE $dt AS DateTime;
         DECLARE $cnt AS Uint64;
-        DECLARE $reservation_id AS Uint64;
+        DECLARE $phone AS String;
         DECLARE $description AS Utf8;
         DECLARE $table_id AS Uint64;
 
-        INSERT INTO reservations (table_id, dt, reservation_id, cnt, description)
-        VALUES ($table_id, $dt, $reservation_id, $cnt, $description);
+        INSERT INTO reservations (table_id, dt, phone, cnt, description)
+        VALUES ($table_id, $dt, $phone, $cnt, $description);
         """
-
-        reservation_id = gen_reservation_id()
 
         def transaction(session):
             tx = session.transaction(ydb.SerializableReadWrite()).begin()
@@ -90,14 +89,33 @@ class Storage(object):
                     '$cnt': cnt,
                     '$table_id': table_id,
                     '$description': '' if description is None else description,
-                    '$reservation_id': reservation_id
+                    '$phone': phone.encode()
                 },
                 commit_tx=True
             )
 
         with session_pool_context(self._driver_config) as session_pool:
             session_pool.retry_operation_sync(transaction)
-        return reservation_id
 
-    def delete_reservation(self, *, reservation_id: int) -> bool:
-        ...
+    def delete_reservation(self, *, phone: str, dt: datetime.datetime) -> None:
+        query = f"""PRAGMA TablePathPrefix("{self._database}");
+        DECLARE $dt AS DateTime;
+        DECLARE $phone AS String;
+
+        DELETE FROM reservations WHERE dt = $dt AND phone = $phone;
+        """
+
+        def transaction(session):
+            tx = session.transaction(ydb.SerializableReadWrite()).begin()
+            prepared_query = session.prepare(query)
+            tx.execute(
+                prepared_query,
+                parameters={
+                    '$dt': dt,
+                    '$phone': phone.encode()
+                },
+                commit_tx=True
+            )
+
+        with session_pool_context(self._driver_config) as session_pool:
+            session_pool.retry_operation_sync(transaction)

@@ -3,7 +3,12 @@ import logging
 from config import Config
 from storage import Storage as YDBStorage
 from controller import Controller
-from models import ReservationCreateRequest, ReservationCreateResponse
+from models import (
+    ReservationCreateRequest,
+    ReservationCreateResponse,
+    ReservationCancelRequest,
+    ReservationCancelResponse
+)
 
 
 def handler(event, _):
@@ -21,19 +26,23 @@ def handler(event, _):
     if event['httpMethod'] == 'POST':
         logging.info('Got ReservationCreateRequest')
         try:
-            request = ReservationCreateRequest(**json.loads(event['body']))
-            response: ReservationCreateResponse = controller.maybe_make_reservation(request)
-            data = json.dumps(response.dict())
+            params = event['queryStringParameters']
+            action = params.pop('action')
+            if action == 'create':
+                request = ReservationCreateRequest(**json.loads(params))
+                response: ReservationCreateResponse = controller.maybe_create_reservation(request)
+                data = json.dumps(response.dict())
+            elif action == 'cancel':
+                request = ReservationCancelRequest(**json.loads(params))
+                response: ReservationCancelResponse = controller.maybe_cancel_reservation(request)
+                data = json.dumps(response.dict())
         except Exception as e:
             logging.warning(f'ReservationCreateRequest failed due to {repr(e)}')
             status_code = 400
             error = repr(e)
-    elif event['httpMethod'] == 'DELETE':
-        ...
-    elif event['httpMethod'] == 'PUT':
-        ...
-    elif event['httpMethod'] == 'GET':
-        ...
+    else:
+        status_code = 400
+        error = 'invalid http method'
 
     return {
         'statusCode': status_code,

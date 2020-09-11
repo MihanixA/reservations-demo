@@ -29,8 +29,3 @@ def session_pool_context(
                 yield session_pool
             except Exception as e:
                 logging.critical(f"failed to create session pool due to {repr(e)}")
-
-
-def gen_reservation_id() -> int:
-    rnd = os.urandom(2)
-    return rnd[0] + (rnd[1] << 8)  # todo: fixed length
