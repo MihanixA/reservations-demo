@@ -37,7 +37,7 @@ function handleCallConnected(e) {
 
 
   flow = AI.createDialogflow({
-    lang: "en"
+    lang: "ru"
   });
 
   if (AI.Events.DialogflowResponse !== undefined)
@@ -66,18 +66,18 @@ function handleCallConnected(e) {
           if (result.allRequiredParamsPresent == true) {
               let msg = "";
               let base_url = 'https://functions.yandexcloud.net/d4erurocvcpt8dc20mfb';
-              base_url += '?dt=' + result.parameters['date'].toString();
+              base_url += '?dt=' + result.parameters['date'].toString().split("T")[0];
+              base_url += 'T' + result.parameters['time'].toString().split("T")[1];
               base_url += '&phone=' + caller_id;
+              Logger.write(base_url);
               if (result.intent['displayName'] === 'restaurants.reservations.cancel') {
                 base_url += '&action=cancel';
-
               } else {
                 base_url += '&action=create';
                 base_url += '&cnt=' + result.parameters['number'].toString();
               }
               Net.httpRequest(base_url,
                 (result) => {
-                  msg += " OK "
                   if (result.code != 200) {
                     Logger.write("Failed");
                     Logger.write("code:  " + result.code);
@@ -86,13 +86,13 @@ function handleCallConnected(e) {
                     Logger.write("headers:  " + JSON.stringify(result.headers));
                     Logger.write("raw_headers:  " + result.raw_headers);
                     Logger.write("text:  " + result.text);
-                    msg += " No tables available. Sorry!";
+                    msg += " К сожалению не нашлось подходящих столиков. Простите! ";
                   } else {
                     Logger.write('OK');
                     Logger.write("data: " + result.data);
                     Logger.write("text: " + result.text);
                     Logger.write("result: " + result.result);
-                    msg += " Your reservation has been saved. Thank you ";
+                    msg += " Хорошо, спасибо. Бронирование привязано к вашему номеру телефона. ";
 
                   }
                   Logger.write('msg' + msg)
@@ -127,7 +127,7 @@ function handleCallConnected(e) {
       }
     })
 
-  player = VoxEngine.createTTSPlayer("Hello. Would you like to book a table?", voice);
+  player = VoxEngine.createTTSPlayer(" Здравствуйте! Это ресторан Факапочная. Желаете забронировать столик? ", voice);
   player.addMarker(-500);
   player.addEventListener(PlayerEvents.PlaybackMarkerReached, startASR);
   player.sendMediaTo(e.call);
